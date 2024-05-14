@@ -2,11 +2,11 @@ const express = require('express')
 require('dotenv').config()
 const cors = require('cors')
 const { MongoClient, ServerApiVersion } = require('mongodb');
+
 // vars
 const port = process.env.PORT || 5000
 const app = express()
 const uri = `mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@cluster0.ympa4ek.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-console.log('env user:', process.env.USER);
 const corsOptions = {
   origin: "http://localhost:5173",
 }
@@ -29,6 +29,13 @@ async function run() {
 
     app.get('/', (req, res) => {
       res.send('welcome to pha11!')
+    })
+    // get all queries (sort by descending time)
+    app.get('/all-queries', async (req, res) => {
+      const sort = {postedTimestamp: -1}
+      const cursor = collQueries.find().sort(sort)
+      const data = await cursor.toArray()
+      res.send(data)
     })
 
     // Send a ping to confirm a successful connection
