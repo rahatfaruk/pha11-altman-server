@@ -66,6 +66,12 @@ async function run() {
       const data = await cursor.toArray()
       res.send(data)
     })
+    // my comments/recommendations of a query
+    app.get('/all-recommendations', async (req, res) => {
+      const cursor = collRecommendations.find(req.query)
+      const data = await cursor.toArray()
+      res.send(data)
+    })
     // add new recommendation
     app.post('/add-recommendation', async (req, res) => {
       const newRec = req.body 
@@ -79,6 +85,18 @@ async function run() {
       const updateDoc = { $inc: {recommendationCount: 1} }
       await collQueries.updateOne(filter, updateDoc)
       res.send(insertedData)
+    })
+    // delete recommendation
+    app.delete('/delete-recommendation/:id', async (req, res) => {
+      const id = req.params.id 
+      const query = { _id: new ObjectId(id) }
+      // delete recommendation 
+      const result = await collRecommendations.deleteOne(query)
+      // decrement recommendation count in queries
+      const updateDoc = { $inc: {recommendationCount: -1} }
+      await collQueries.updateOne(query, updateDoc)
+      // const data = await collQueries.findOne(query)
+      res.send(result)
     })
 
     // Send a ping to confirm a successful connection
