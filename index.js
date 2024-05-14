@@ -37,6 +37,21 @@ async function run() {
       const data = await cursor.toArray()
       res.send(data)
     })
+    // get recent queries (max 6 items)
+    app.get('/recent-queries', async (req, res) => {
+      const sort = {postedTimestamp: -1}
+      const cursor = collQueries.find().sort(sort).limit(6)
+      const data = await cursor.toArray()
+      res.send(data)
+    })
+    // get my queries (using logged email)
+    app.get('/my-queries', async (req, res) => {
+      const query = req.query
+      const sort = {postedTimestamp: -1}
+      const cursor = collQueries.find(query).sort(sort)
+      const data = await cursor.toArray()
+      res.send(data)
+    })
 
     // Send a ping to confirm a successful connection
     await db.command({ ping: 1 });
