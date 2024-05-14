@@ -59,11 +59,26 @@ async function run() {
       const data = await collQueries.findOne(query)
       res.send(data)
     })
+    // get comments/recommendations of a query
+    app.get('/query-comments', async (req, res) => {
+      const sort = {postedTimestamp: -1}
+      const cursor = collRecommendations.find(req.query).sort(sort)
+      const data = await cursor.toArray()
+      res.send(data)
+    })
     // add new recommendation
     app.post('/add-recommendation', async (req, res) => {
       const newRec = req.body 
-      const data = await collRecommendations.insertOne(newRec)
-      res.send(data)
+      const {queryId} = newRec
+
+      // add recommend: inside rec collection
+      const insertedData = await collRecommendations.insertOne(newRec)
+
+      // increment  recommendation count of the query: inside query collection
+      const filter = { _id: new ObjectId(`${queryId}`) }
+      const updateDoc = { $inc: {recommendationCount: 1} }
+      await collQueries.updateOne(filter, updateDoc)
+      res.send(insertedData)
     })
 
     // Send a ping to confirm a successful connection
