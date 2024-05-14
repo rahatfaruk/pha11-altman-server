@@ -66,11 +66,17 @@ async function run() {
       const data = await cursor.toArray()
       res.send(data)
     })
-    // my comments/recommendations of a query
-    app.get('/all-recommendations', async (req, res) => {
+    // comments/recommendations (for me && by me)
+    app.get('/all-recommendations', async (req, res) => {    
       const cursor = collRecommendations.find(req.query)
       const data = await cursor.toArray()
       res.send(data)
+    })
+
+    // add new query
+    app.post('/add-query', async (req, res) => {
+      const result = await collQueries.insertOne(req.body)
+      res.send(result)
     })
     // add new recommendation
     app.post('/add-recommendation', async (req, res) => {
@@ -86,6 +92,7 @@ async function run() {
       await collQueries.updateOne(filter, updateDoc)
       res.send(insertedData)
     })
+    
     // delete recommendation
     app.delete('/delete-recommendation/:id', async (req, res) => {
       const id = req.params.id 
