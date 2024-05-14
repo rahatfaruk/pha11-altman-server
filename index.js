@@ -1,7 +1,7 @@
 const express = require('express')
 require('dotenv').config()
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // vars
 const port = process.env.PORT || 5000
@@ -50,6 +50,19 @@ async function run() {
       const sort = {postedTimestamp: -1}
       const cursor = collQueries.find(query).sort(sort)
       const data = await cursor.toArray()
+      res.send(data)
+    })
+    // get query details 
+    app.get('/query-details', async (req, res) => {
+      const id = req.query.id 
+      const query = { _id: new ObjectId(id) }
+      const data = await collQueries.findOne(query)
+      res.send(data)
+    })
+    // add new recommendation
+    app.post('/add-recommendation', async (req, res) => {
+      const newRec = req.body 
+      const data = await collRecommendations.insertOne(newRec)
       res.send(data)
     })
 
