@@ -1,14 +1,19 @@
 const express = require('express')
 require('dotenv').config()
 const cors = require('cors')
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // vars
-const port = process.env.PORT || 5000
 const app = express()
+const port = process.env.PORT || 5000
+const privateKey = process.env.PRIVATE_KEY
 const uri = `mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@cluster0.ympa4ek.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "https://pha11-altproduct.web.app", "https://pha11-altproduct.firebaseapp.com"],
+  "credentials": true, 
+  "optionsSuccessStatus": 200,
 }
 // create mongo client
 const client = new MongoClient(uri, {
@@ -18,6 +23,25 @@ const client = new MongoClient(uri, {
 // middleware
 app.use(cors(corsOptions))
 app.use(express.json())
+app.use(cookieParser())
+
+// def middleware: verify jwt token
+function verifyToken(req, res, next) {
+  const token = req.cookies?.token
+
+  // check if any token exist 
+  if(!token) {
+    return res.status(401).send({message: 'unauthorized'})
+  }
+
+  jwt.verify(token, privateKey, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({message: 'unauthorized'})
+    } 
+    req.user = decoded
+    next()
+  })
+}
 
 async function run() {
   try {
@@ -27,6 +51,20 @@ async function run() {
     const collQueries = db.collection('queries')
     const collRecommendations = db.collection('recommendations')
 
+    // ## jwt: create cookies
+    app.post('/jwt', async (req, res) => {
+      const user = { email: req.body.email }
+      // create jwt token
+      const token = jwt.sign(user, privateKey, {expiresIn: '6h'})
+      // set cookie
+      res.cookie('token', token, {httpOnly: true, secure: true, sameSite: 'none'}).send({success: true})
+    })
+    // ## clear cookie
+    app.get('/clear-jwt', async (req, res) => {
+      res.clearCookie('token').send({message: 'cleared cookie'})
+    })
+
+    // regular api --------------------------
     app.get('/', (req, res) => {
       res.send('welcome to pha11!')
     })
