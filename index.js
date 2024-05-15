@@ -105,6 +105,23 @@ async function run() {
       // const data = await collQueries.findOne(query)
       res.send(result)
     })
+    // update query
+    app.patch('/update-query', async (req, res) => {
+      const id = req.query.id
+      const newData = req.body 
+      
+      const filter = { _id: new ObjectId(id) }
+      const updateDoc = { $set: newData }
+      const result = await collQueries.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+    // delete query
+    app.delete('/delete-query/:id', async (req, res) => {
+      const id = req.params.id 
+      const query = { _id: new ObjectId(id) }
+      const result = await collQueries.deleteOne(query)
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await db.command({ ping: 1 });
