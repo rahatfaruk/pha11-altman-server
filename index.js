@@ -109,25 +109,38 @@ async function run() {
       res.send(data)
     })
     // comments/recommendations (for me && by me)
-    app.get('/all-recommendations', async (req, res) => {    
+    app.get('/all-recommendations', verifyToken, async (req, res) => {  
+      // verify user email: req.user.email --> set on verifyToken
+      const queryEmail = req.query.recommenderEmail || req.query.userEmail
+      if(req.user.email !== queryEmail) {
+        return res.status(403).send({success: false, message: 'forbidden access'})
+      }   
       const cursor = collRecommendations.find(req.query)
       const data = await cursor.toArray()
       res.send(data)
     })
 
     // add new query
-    app.post('/add-query', async (req, res) => {
+    app.post('/add-query', verifyToken,async (req, res) => {
+      // verify user email: req.user.email --> set on verifyToken
+      if(req.user.email !== req.query.email) {
+        return res.status(403).send({success: false, message: 'forbidden access'})
+      } 
       const result = await collQueries.insertOne(req.body)
       res.send(result)
     })
     // add new recommendation
-    app.post('/add-recommendation', async (req, res) => {
+    app.post('/add-recommendation', verifyToken, async (req, res) => {
       const newRec = req.body 
       const {queryId} = newRec
 
+      // verify user email: req.user.email --> set on verifyToken
+      if(req.user.email !== req.query.email) {
+        return res.status(403).send({success: false, message: 'forbidden access'})
+      } 
+
       // add recommend: inside rec collection
       const insertedData = await collRecommendations.insertOne(newRec)
-
       // increment  recommendation count of the query: inside query collection
       const filter = { _id: new ObjectId(`${queryId}`) }
       const updateDoc = { $inc: {recommendationCount: 1} }
@@ -136,9 +149,15 @@ async function run() {
     })
     
     // delete recommendation
-    app.delete('/delete-recommendation/:id', async (req, res) => {
+    app.delete('/delete-recommendation/:id', verifyToken, async (req, res) => {
       const id = req.params.id 
       const query = { _id: new ObjectId(id) }
+
+      // verify user email: req.user.email --> set on verifyToken
+      if(req.user.email !== req.query.email) {
+        return res.status(403).send({success: false, message: 'forbidden access'})
+      } 
+
       // delete recommendation 
       const result = await collRecommendations.deleteOne(query)
       // decrement recommendation count in queries
@@ -148,9 +167,14 @@ async function run() {
       res.send(result)
     })
     // update query
-    app.patch('/update-query', async (req, res) => {
+    app.patch('/update-query', verifyToken,async (req, res) => {
       const id = req.query.id
       const newData = req.body 
+
+      // verify user email: req.user.email --> set on verifyToken
+      if(req.user.email !== req.query.email) {
+        return res.status(403).send({success: false, message: 'forbidden access'})
+      } 
       
       const filter = { _id: new ObjectId(id) }
       const updateDoc = { $set: newData }
