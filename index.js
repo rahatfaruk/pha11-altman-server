@@ -149,21 +149,24 @@ async function run() {
     })
     
     // delete recommendation
-    app.delete('/delete-recommendation/:id', verifyToken, async (req, res) => {
-      const id = req.params.id 
-      const query = { _id: new ObjectId(id) }
-
+    app.delete('/delete-recommendation', verifyToken, async (req, res) => {
+      // const id = req.params.id 
+      const recommendId = req.query.recommendId
+      const queryId = req.query.queryId
+      
       // verify user email: req.user.email --> set on verifyToken
       if(req.user.email !== req.query.email) {
         return res.status(403).send({success: false, message: 'forbidden access'})
       } 
-
+      
       // delete recommendation 
-      const result = await collRecommendations.deleteOne(query)
-      // decrement recommendation count in queries
+      const recommendQuery = { _id: new ObjectId(`${recommendId}`) }
+      const result = await collRecommendations.deleteOne(recommendQuery)
+      // decreament recommendationCount of correspond query
+      const filter = { _id: new ObjectId(`${queryId}`) }
       const updateDoc = { $inc: {recommendationCount: -1} }
-      await collQueries.updateOne(query, updateDoc)
-      // const data = await collQueries.findOne(query)
+      await collQueries.updateOne(filter, updateDoc)
+      
       res.send(result)
     })
     // update query
