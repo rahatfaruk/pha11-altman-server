@@ -10,11 +10,19 @@ const app = express()
 const port = process.env.PORT || 5000
 const privateKey = process.env.PRIVATE_KEY
 const uri = `mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@cluster0.ympa4ek.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
+// define options
 const corsOptions = {
   origin: ["http://localhost:5173", "https://pha11-altproduct.web.app", "https://pha11-altproduct.firebaseapp.com"],
   "credentials": true, 
   "optionsSuccessStatus": 200,
 }
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+};
+
 // create mongo client
 const client = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true, }
@@ -46,7 +54,7 @@ function verifyToken(req, res, next) {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const db = client.db('pha11')
     const collQueries = db.collection('queries')
     const collRecommendations = db.collection('recommendations')
@@ -57,11 +65,11 @@ async function run() {
       // create jwt token
       const token = jwt.sign(user, privateKey, {expiresIn: '6h'})
       // set cookie
-      res.cookie('token', token, {httpOnly: true, secure: true, sameSite: 'none'}).send({success: true})
+      res.cookie('token', token, cookieOptions).send({success: true})
     })
     // ## clear cookie
     app.get('/clear-jwt', async (req, res) => {
-      res.clearCookie('token').send({message: 'cleared cookie'})
+      res.clearCookie('token', { ...cookieOptions, maxAge: 0 }).send({message: 'cleared cookie'})
     })
 
     // regular api --------------------------
@@ -166,7 +174,7 @@ async function run() {
       const filter = { _id: new ObjectId(`${queryId}`) }
       const updateDoc = { $inc: {recommendationCount: -1} }
       await collQueries.updateOne(filter, updateDoc)
-      
+
       res.send(result)
     })
     // update query
@@ -197,8 +205,8 @@ async function run() {
     })
 
     // Send a ping to confirm a successful connection
-    await db.command({ ping: 1 });
-    console.log("Pinged! Successfully connected to MongoDB!");
+    // await db.command({ ping: 1 });
+    // console.log("Pinged! Successfully connected to MongoDB!");
   } catch(err) {
     console.log(err);
   }
