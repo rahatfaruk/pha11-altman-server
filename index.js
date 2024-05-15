@@ -83,8 +83,12 @@ async function run() {
       res.send(data)
     })
     // get my queries (using logged email)
-    app.get('/my-queries', async (req, res) => {
+    app.get('/my-queries', verifyToken,async (req, res) => {
       const query = req.query
+      // verify user email: req.user.email --> set on verifyToken
+      if(req.user.email !== query.userEmail) {
+        return res.status(403).send({success: false, message: 'forbidden access'})
+      }
       const sort = {postedTimestamp: -1}
       const cursor = collQueries.find(query).sort(sort)
       const data = await cursor.toArray()
@@ -154,8 +158,12 @@ async function run() {
       res.send(result)
     })
     // delete query
-    app.delete('/delete-query/:id', async (req, res) => {
-      const id = req.params.id 
+    app.delete('/delete-query/:id', verifyToken,async (req, res) => {
+      const id = req.params.id
+      // verify user email: req.user.email --> set on verifyToken
+      if(req.user.email !== req.query.email) {
+        return res.status(403).send({success: false, message: 'forbidden access'})
+      } 
       const query = { _id: new ObjectId(id) }
       const result = await collQueries.deleteOne(query)
       res.send(result)
